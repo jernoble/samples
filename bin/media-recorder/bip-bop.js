@@ -79,14 +79,14 @@ function paintVideoFrame(canvas, options, currentTime) {
         let text = description;
         let metrics = context.measureText(text);
 
-        let textPosition = { x: width * 0.05, y: height * 0.05 + metrics.emHeightAscent + metrics.emHeightDescent };
+        let textPosition = { x: width * 0.05, y: height * 0.05 + metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent };
 
         context.fillStyle = colors.foreground;
         context.fillText(text, textPosition.x, textPosition.y);
 
         text = `${options.frameDuration.timescale}fps ${width}x${height}`;
         metrics = context.measureText(text);
-        textPosition.y += (metrics.emHeightAscent + metrics.emHeightDescent);
+        textPosition.y += (metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
         context.fillText(text, textPosition.x, textPosition.y);
 
         let hours = Math.floor(currentTimeInSeconds / (60 * 60)) % 100;
@@ -107,13 +107,13 @@ function paintVideoFrame(canvas, options, currentTime) {
             ].join('');
 
         metrics = context.measureText(text);
-        textPosition.y += (metrics.emHeightAscent + metrics.emHeightDescent);
+        textPosition.y += (metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
         context.fillText(text, textPosition.x, textPosition.y);
 
         let frameCount = String(totalFrames).padStart(6, '0');
 
         metrics = context.measureText(text);
-        textPosition.y += (metrics.emHeightAscent + metrics.emHeightDescent);
+        textPosition.y += (metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
         context.fillText(frameCount, textPosition.x, textPosition.y);
 
         context.restore();
