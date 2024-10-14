@@ -215,12 +215,12 @@ function writeAudioData(options, inCurrentTime, inEndTime)
     }
 
     let audioData = options.audioData;
-    let startTime = convertTimescale(inCurrentTime, options.sampleRate);
-    let endTime = convertTimescale(inEndTime, options.sampleRate);
-    let duration = convertTimescale(options.frameDuration, options.sampleRate);
+    let startTime = convertTimescale(inCurrentTime, options.audio.sampleRate);
+    let endTime = convertTimescale(inEndTime, options.audio.sampleRate);
+    let duration = convertTimescale(options.frameDuration, options.audio.sampleRate);
 
-    let frequency = options.humFrequency;
-    let amplitude = options.humAmplitude * 32768.0;
+    let frequency = options.audio.humFrequency;
+    let amplitude = options.audio.humAmplitude * 32768.0;
 
     let bipBopPeriod = startTime.timescale * 2;
 
@@ -228,11 +228,11 @@ function writeAudioData(options, inCurrentTime, inEndTime)
     let shouldBop = (startTime.value + startTime.timescale) % bipBopPeriod == 0;
 
     if (shouldBip) {
-        frequency = options.bipFrequency;
-        amplitude = options.bipAmplitude * 32768.0;
+        frequency = options.audio.bipFrequency;
+        amplitude = options.audio.bipAmplitude * 32768.0;
     } else if (shouldBop) {
-        frequency = options.bopFrequency;
-        amplitude = options.bopAmplitude * 32768.0;
+        frequency = options.audio.bopFrequency;
+        amplitude = options.audio.bopAmplitude * 32768.0;
     }
 
     let humPeriod = startTime.timescale / frequency;
