@@ -1,0 +1,84 @@
+---
+title: HDR Media Query
+subtitle: Use CSS Media Queries to detect HDR Display support
+tags: ["HDR"]
+---
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HDR Media Query</title>
+    <style type="text/css">
+        .category {
+            display: inline-block;
+            border: 1px solid black;
+            padding: 1px;
+        }
+        .hdr, .sdr, .big, .small, .retina, .non-retina, .srgb, .p3, .rec2020 {
+            display: none;
+            width: 100px;
+            height: 100px;
+        }
+        @media (dynamic-range: high) {
+            .hdr { display: block; }
+        }
+        @media not screen and (dynamic-range: high) {
+            .sdr { display: block; }
+        }
+        @media (max-device-height: 1080px) {
+            .small { display: block; }
+        }
+        @media (min-device-height: 1080px) {
+            .big { display: block; }
+        }
+        @media (-webkit-min-device-pixel-ratio: 2) {
+            .retina { display: block; }
+        }
+        @media (-webkit-max-device-pixel-ratio: 1) {
+            .non-retina { display: block; }
+        }
+        @media (color-gamut: srgb) {
+            .srgb { display: block; }
+        }
+        @media (color-gamut: p3) {
+            .srgb { display: none; }
+            .p3 { display: block; }
+        }
+        @media (color-gamut: rec2020) {
+            .p3, .srgb { display: none; }
+            .rec2020 { display: block; }
+        }
+        .sdr, .small, .non-retina, .srgb { background-color: red; }
+        .hdr, .big, .retina, .p3, .rec2020 { background-color: green; }
+
+        @supports (background-color: color(display-p3 0 0 0)) {
+            .p3 {background-color: color(display-p3 0 0.5 0); }
+        }
+
+        @supports (background-color: color(rec-2020 0 0 0)) {
+            .rec2020 {background-color: color(rec-2020 0 0.5 0); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="category">
+        HDR or SDR:
+        <div class="hdr">HDR</div>
+        <div class="sdr">SDR</div>
+    </div>
+    <div class="category">
+        HD or SD:
+        <div class="big">HD (>1080p)</div>
+        <div class="small">SD (<= 1080p)</div>
+    </div>
+    <div class="category">
+        Retina or Non:
+        <div class="retina">Retina</div>
+        <div class="non-retina">Non-retina</div>
+    </div>
+    <div class="category">
+        Color Gamut:
+        <div class="srgb">sRGB</div>
+        <div class="p3">P3</div>
+        <div class="rec2020">Rec. 2020</div>
+    </div>
+</body>
