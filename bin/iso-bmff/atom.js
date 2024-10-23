@@ -325,7 +325,11 @@ class ContainerAtom extends Atom {
         Atom.constructorMap['fpsd'] = ContainerAtom.bind(null, 'FairPlay Streaming InitData Box');
         Atom.constructorMap['fpsk'] = ContainerAtom.bind(null, 'FairPlay Key Request Box');
         Atom.constructorMap['sv3d'] = ContainerAtom.bind(null, 'Spherical Video Box');
-        Atom.constructorMap['proj'] = ContainerAtom.bind(null, 'Projection Box')
+        Atom.constructorMap['proj'] = ContainerAtom.bind(null, 'Projection Box');
+        Atom.constructorMap['vexu'] = ContainerAtom.bind(null, 'Video Extended Usage Box');
+        Atom.constructorMap['eyes'] = ContainerAtom.bind(null, 'Video Stereo View Signaling Box');
+        Atom.constructorMap['cams'] = ContainerAtom.bind(null, 'Stereo Camera System Box');
+        Atom.constructorMap['cmfy'] = ContainerAtom.bind(null, 'Stereo Comfort Box');
     }
 
     constructor(description, parent) {
@@ -2527,6 +2531,179 @@ class MeshBox extends Atom {
                 indexes: indexes,
             });
         }
+
+        return this.size;
+    }
+}
+
+class RequiredBoxTypesBox extends FullBox {
+    static {
+        Atom.constructorMap['must'] = RequiredBoxTypesBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Required Box Types Box';
+        this.requiredBoxes = [];
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, size);
+        reader.skip(headerOffset);
+
+
+        while (reader.remainingBytes >= 4) {
+            let requiredBox = reader.readString(4);
+            this.requiredBoxes.push(requiredBox);
+        }
+
+        return this.size;
+    }
+}
+
+class StereoViewInformationBox extends FullBox {
+    static {
+        Atom.constructorMap['stri'] = StereoViewInformationBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Stereo View Information Box";
+        this.eye_views_reversed = false;
+        this.has_additional_views = false;
+        this.has_right_eye_view = false;
+        this.has_left_eye_view = false;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        // unsigned int(4) reserved;
+        let byte = reader.readUint8();
+        this.eye_views_reversed = (byte & 0x8) ? true : false;
+        this.has_additional_views = (byte & 0x4) ? true : false;
+        this.has_right_eye_view = (byte & 0x2) ? true : false;
+        this.has_left_eye_view = (byte & 0x1) ? true : false;
+
+        return this.size;
+    }
+}
+
+class HeroStereoEyeDescriptionBox extends FullBox {
+    static {
+        Atom.constructorMap['hero'] = HeroStereoEyeDescriptionBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Hero Stereo Eye Description Box";
+        this.hero_eye_indicator = 0;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.hero_eye_indicator = reader.readUint8();
+
+        return this.size;
+    }
+}
+
+class StereoCameraSystemBaselineBox extends FullBox {
+    static {
+        Atom.constructorMap['blin'] = StereoCameraSystemBaselineBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Stereo Camera System Baseline Box";
+        this.baseline = 0;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.baseline = reader.readUint32();
+
+        return this.size;
+    }
+}
+
+class StereoComfortDisparityAdjustmentBox extends FullBox {
+    static {
+        Atom.constructorMap['dadj'] = StereoComfortDisparityAdjustmentBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Stereo Comfort Disparity Adjustment Box";
+        this.disparity_adjustment = 0;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.disparity_adjustment = reader.readInt32();
+
+        return this.size;
+    }
+}
+
+class ProjectionInformationBox extends FullBox {
+    static {
+        Atom.constructorMap['prji'] = ProjectionInformationBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Projection Information Box";
+        this.projection_kind = 0;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.projection_kind = reader.readString(4);
+
+        return this.size;
+    }
+}
+
+class HorizontalFieldOfViewBox extends Atom {
+    static {
+        Atom.constructorMap['hfov'] = HorizontalFieldOfViewBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = "Horizontal Field of View Box";
+        this.horizontal_field_of_view = 0;
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.horizontal_field_of_view = reader.readUint32();
 
         return this.size;
     }
