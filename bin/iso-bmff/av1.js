@@ -24,7 +24,7 @@ class AV1CodecConfigurationBox extends Atom {
         this.configOBUs = [];
     }
 
-    parse(buffer, offset) {
+    async parse(buffer, offset) {
         var headerOffset = super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);

@@ -30,8 +30,8 @@ tags: Video Formats
             }
 
             function readAtom(offset, length) {
-                reader.onload = function(e) {
-                    atom = Atom.create(e.target.result);
+                reader.onload = async function(e) {
+                    atom = await Atom.create(e.target.result);
                     if (!atom)
                         return;
                     var output = document.getElementById('output');

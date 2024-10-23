@@ -51,6 +51,10 @@ class DataReader {
         return this.#offset;
     }
 
+    get remainingBytes() {
+        return this.#view.byteLength - this.#offset;
+    }
+
     readInt16() {
         let result = this.#view.getInt16(this.#offset);
         this.#offset += 2;
@@ -99,6 +103,12 @@ class DataReader {
         return result;
     }
 
+    readFloat32() {
+        let result = this.#view.getFloat32(this.#offset);
+        this.#offset += 4;
+        return result;
+    }
+
     readString(length) {
         return String.fromCharCode.apply(null, this.readUint8Array(length));
     }
@@ -139,7 +149,7 @@ class Atom {
         return this;
     };
 
-    static create(buffer, offset, parent) {
+    static async create(buffer, offset, parent) {
         // 'offset' is optional.
         if (arguments.length < 2) {
             offset = 0;
@@ -152,7 +162,7 @@ class Atom {
             atom = new Atom(parent);
         else
             atom = new Atom.constructorMap[type](parent);
-        atom.parse(buffer, offset);
+        await atom.parse(buffer, offset);
         return atom;
     };
 
@@ -182,7 +192,7 @@ class Atom {
     };
 
 
-    parse(buffer, offset) {
+    async parse(buffer, offset) {
         // 'offset' is optional.
         if (typeof(offset) == 'undefined')
             offset = 0;
@@ -281,8 +291,8 @@ class FileTypeAtom extends Atom {
         this.compatible_brands = [];
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -314,7 +324,8 @@ class ContainerAtom extends Atom {
         Atom.constructorMap['udta'] = ContainerAtom.bind(null, 'User Data Box');
         Atom.constructorMap['fpsd'] = ContainerAtom.bind(null, 'FairPlay Streaming InitData Box');
         Atom.constructorMap['fpsk'] = ContainerAtom.bind(null, 'FairPlay Key Request Box');
-
+        Atom.constructorMap['sv3d'] = ContainerAtom.bind(null, 'Spherical Video Box');
+        Atom.constructorMap['proj'] = ContainerAtom.bind(null, 'Projection Box')
     }
 
     constructor(description, parent) {
@@ -323,10 +334,10 @@ class ContainerAtom extends Atom {
         this.childAtoms = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset, this);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
         while (headerOffset < this.size) {
-            var childAtom = Atom.create(buffer, offset + headerOffset, this);
+            var childAtom = await Atom.create(buffer, offset + headerOffset, this);
             if (!childAtom)
                 break;
             headerOffset += childAtom.size;
@@ -343,8 +354,8 @@ class FullBox extends Atom {
         this.flags = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -377,8 +388,8 @@ class MovieHeaderAtom extends FullBox {
         this.nextTrackID = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -435,8 +446,8 @@ class EditListBox extends FullBox {
         this.edits = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -484,8 +495,8 @@ class TrackHeaderAtom extends FullBox {
         this.height = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -554,8 +565,8 @@ class MediaHeaderAtom extends FullBox {
         this.quality = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -583,8 +594,8 @@ class VideoMediaHeaderBox extends FullBox {
         this.opcolor = [0, 0, 0];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -609,8 +620,8 @@ class SoundMediaHeaderBox extends FullBox {
         this.balance = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -636,8 +647,8 @@ class HandlerReferenceBox extends FullBox {
         this.name = '';
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -671,8 +682,8 @@ class SyncSampleAtom extends Atom {
         this.syncSamples = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -709,8 +720,8 @@ class TimeToSampleAtom extends FullBox {
         });
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -773,8 +784,8 @@ class SampleSizeAtom extends FullBox {
         });
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -805,8 +816,8 @@ class SampleDescriptionBox extends FullBox {
         this.childAtoms = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var view = new DataView(buffer, offset);
 
         if (this.parent.type !== 'stbl' || this.parent.parent.type !== 'minf' || this.parent.parent.parent.type !== 'mdia')
@@ -823,7 +834,7 @@ class SampleDescriptionBox extends FullBox {
             var entry;
             var type = Atom.getType(buffer, offset + headerOffset);
             if (typeof(Atom.constructorMap[type]) !== 'undefined')
-                entry = Atom.create(buffer, offset + headerOffset);
+                entry = await Atom.create(buffer, offset + headerOffset);
             else {
                 switch (handlerBox.handlerType) {
                     case 'soun':
@@ -859,8 +870,8 @@ class SampleEntry extends Atom {
         this.dataReferenceIndex = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -882,8 +893,8 @@ class AudioSampleEntry extends SampleEntry {
         this.sampleRate = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -913,8 +924,8 @@ class MP4AudioSampleEntry extends AudioSampleEntry {
         this.description = 'MP4 Audio Sample Entry';
         this.childAtoms = [];
     };
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var ES = new ESDBox(this);
         ES.parse(buffer, offset+ headerOffset);
         this.childAtoms.push(ES);
@@ -935,11 +946,11 @@ class EncapsulatedAudioSampleEntry extends AudioSampleEntry {
         this.description = 'Encapsulated Audio Sample Entry';
         this.childAtoms = [];
     };
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 
         while (headerOffset < this.size) {
-            var childAtom = Atom.create(buffer, offset + headerOffset, this);
+            var childAtom = await Atom.create(buffer, offset + headerOffset, this);
             if (!childAtom)
                 break;
             headerOffset += childAtom.size;
@@ -960,8 +971,8 @@ class ESDBox extends FullBox {
         this.description = 'Sample Description Box'
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 
         this.descriptor = new ESDescriptor(this);
         headerOffset += this.descriptor.parse(buffer, offset + headerOffset);
@@ -988,7 +999,7 @@ class BaseDescriptor {
         this.tag = 0;
         this.size = 0;
     };
-    parse(buffer, offset) {
+    async parse(buffer, offset) {
         var headerOffset = 0;
         var view = new DataView(buffer, offset);
 
@@ -1029,8 +1040,8 @@ class ESDescriptor extends BaseDescriptor {
         this.ES_ID = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1074,9 +1085,9 @@ class DecoderConfigDescriptor extends BaseDescriptor {
         this.specificInfo = [];
     };
 
-    parse(buffer, offset)
+    async parse(buffer, offset)
     {
-        var headerOffset = super.parse(buffer, offset);
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1126,8 +1137,8 @@ class AudioSpecificConfig extends BaseDescriptor {
         this.channelConfiguration = 0;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 		if (this.size < headerOffset)
 			return;
 
@@ -1161,8 +1172,8 @@ class VisualSampleEntry extends SampleEntry {
         this.childAtoms = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1187,7 +1198,7 @@ class VisualSampleEntry extends SampleEntry {
         reader.skip(2);
 
         while (this.size - reader.offset > 8) {
-            var childAtom = Atom.create(buffer, offset + reader.offset, this);
+            var childAtom = await Atom.create(buffer, offset + reader.offset, this);
             if (!childAtom)
                 break;
             reader.skip(childAtom.size);
@@ -1214,9 +1225,9 @@ class AVCConfigurationBox extends Atom {
         this.pictureParameterSets = [];
     };
 
-    parse(buffer, offset)
+    async parse(buffer, offset)
     {
-        var headerOffset = super.parse(buffer, offset);
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1293,9 +1304,9 @@ class HEVCConfigurationBox extends Atom {
         this.temporalIdNested = 0;
     };
 
-    parse(buffer, offset)
+    async parse(buffer, offset)
     {
-        var headerOffset = super.parse(buffer, offset);
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1360,8 +1371,8 @@ class CleanApertureBox extends Atom {
         this.vertOffD = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1392,8 +1403,8 @@ class TrackExtendsAtom extends FullBox {
         this.default_sample_flags = 0;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1417,8 +1428,8 @@ class OriginalFormatBox extends Atom {
         this.dataFormat = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 
         var array = new Uint8Array(buffer, offset + headerOffset, 4);
         this.dataFormat = String.fromCharCode.apply(null, array);
@@ -1441,8 +1452,8 @@ class SchemeTypeBox extends FullBox {
         this.schemeURL = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1475,8 +1486,8 @@ class TrackEncryptionBox extends FullBox {
         this.defaultConstantIV = null;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1518,8 +1529,8 @@ class SampleEncryptionBox extends FullBox {
         this.description = "Sample Encryption Box";
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1566,8 +1577,8 @@ class SegmentIndexBox extends FullBox {
         this.references = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1633,8 +1644,8 @@ class ProtectionSystemBox extends FullBox {
         this.data = null;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var view = new DataView(buffer, offset);
 
         var UUIDArrayView = new Uint8Array(buffer, offset + headerOffset, 16);
@@ -1674,8 +1685,8 @@ class MovieExtendsHeaderBox extends FullBox {
         this.duration = 0;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var view = new DataView(buffer, offset);
 
         this.duration = view.getUint32(headerOffset);
@@ -1694,8 +1705,8 @@ class MovieFragmentHeaderBox extends FullBox {
         this.sequenceNumber = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var view = new DataView(buffer, offset);
 
         this.sequenceNumber = view.getUint32(headerOffset);
@@ -1721,8 +1732,8 @@ class TrackFragmentHeaderBox extends FullBox {
         this.trackID = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 
         this.baseDataOffsetPresent         = this.flags & 0x00001 ? true : false;
         this.sampleDescriptionIndexPresent = this.flags & 0x00002 ? true : false;
@@ -1775,8 +1786,8 @@ class TrackFragmentRunBox extends FullBox {
         this.duration = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         this.dataOffsetPresent                   = this.flags & 0x00001 ? true : false;
         this.firstSampleFlagsPresent             = this.flags & 0x00004 ? true : false;
         this.sampleDurationPresent               = this.flags & 0x00100 ? true : false;
@@ -1842,8 +1853,8 @@ class TrackFragmentBaseMediaDecodeTimeBox extends FullBox {
         this.baseMediaDecodeTime = 0;
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1876,8 +1887,8 @@ class ColorBox extends Atom {
         this.description = "Color";
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -1906,8 +1917,8 @@ class DataEntryBox extends FullBox {
         this.location = '';
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
 
         let remaining = this.size - headerOffset;
         var array = new Uint8Array(buffer, offset + headerOffset, remaining);
@@ -1940,15 +1951,15 @@ class DataReferenceBox extends FullBox {
         this.dataEntries = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var view = new DataView(buffer, offset);
 
         this.entryCount = view.getInt32(headerOffset);
         headerOffset += 4;
 
         while (this.dataEntries.length < this.entryCount) {
-            var childAtom = Atom.create(buffer, offset + headerOffset, this);
+            var childAtom = await Atom.create(buffer, offset + headerOffset, this);
             if (!childAtom)
                 break;
             headerOffset += childAtom.size;
@@ -1978,8 +1989,8 @@ class SampleToChunkBox extends FullBox {
         this.dataEntries = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2017,8 +2028,8 @@ class ChunkOffsetBox extends FullBox {
         this.chunkOffsets = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2050,8 +2061,8 @@ class SampleDependencyTypeBox extends FullBox {
         this.sampleDependencies = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var array = new Uint8Array(buffer, offset + headerOffset, this.size - headerOffset);
         var bitReader = new BitReader(array, 0);
 
@@ -2085,8 +2096,8 @@ class PartialSyncSampleAtom extends FullBox {
         this.partialSyncSamples = [];
     };
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2116,8 +2127,8 @@ class WindowLocationAtom extends Atom {
         this.y = 0;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2140,8 +2151,8 @@ class FpsKeySystemInfoBox extends FullBox {
         this.scheme = 0;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2164,8 +2175,8 @@ class FpsKeyRequestInfoBox extends FullBox {
         this.keyId = null;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2185,8 +2196,8 @@ class FpsKeyAssetIdBox extends Atom {
         this.assetId = null;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2207,8 +2218,8 @@ class FpsKeyContextBox extends Atom {
         this.context = null;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2230,8 +2241,8 @@ class FpsKeyVersionListBox extends Atom {
         this.versions = null;
     }
 
-    parse(buffer, offset) {
-        var headerOffset = super.parse(buffer, offset);
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset);
         var reader = new DataReader(buffer, offset, this.size);
         reader.skip(headerOffset);
 
@@ -2252,15 +2263,271 @@ class MetaBox extends FullBox {
         this.childAtoms = [];
     }
 
-    parse (buffer, offset) {
-        var headerOffset = super.parse(buffer, offset, this);
+    async parse (buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
         while (headerOffset < this.size) {
-            var childAtom = Atom.create(buffer, offset + headerOffset, this);
+            var childAtom = await Atom.create(buffer, offset + headerOffset, this);
             if (!childAtom)
                 break;
             headerOffset += childAtom.size;
             this.childAtoms.push(childAtom);
         }
         return headerOffset;
+    }
+}
+
+
+class MetadataSampleDescriptionBox extends FullBox {
+    
+}
+
+class Stereoscopic3DVideoBox extends FullBox {
+    static {
+        Atom.constructorMap['st3d'] = Stereoscopic3DVideoBox.bind(null);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Stereoscopic 3D Video Box'
+        this.stereo_mode = 0;
+    }
+
+    async parse (buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.stereo_mode = reader.readUint8();
+
+        return reader.offset;
+    }
+}
+
+class SphericalVideoHeader extends FullBox {
+    static {
+        Atom.constructorMap['svhd'] = SphericalVideoHeader.bind(null);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Spherical Video Header';
+        this.metadata_source = '';
+    }
+
+    async parse (buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        var remaining = this.size - reader.offset;
+        this.metadata_source = reader.readString(remaining);
+
+        return reader.offset;
+    }
+}
+
+class ProjectionHeaderBox extends Atom {
+    static {
+        Atom.constructorMap['prhd'] = ProjectionHeaderBox.bind(null);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Projection Header Box';
+        this.pose_yaw_degrees = 0;
+        this.pose_pitch_degrees = 0;
+        this.pose_roll_degrees = 0;
+    }
+
+    async parse (buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.pose_yaw_degrees = reader.readInt32();
+        this.pose_pitch_degrees = reader.readInt32();
+        this.pose_roll_degrees = reader.readInt32();
+
+        return reader.offset;
+    }
+}
+
+class CubemapProjection extends FullBox {
+    static {
+        Atom.constructorMap['cbmp'] = CubemapProjection.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Cubemap Projection Box';
+        this.layout = 0;
+        this.padding = 0;
+    }
+
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.layout = reader.readInt32();
+        this.padding = reader.readInt32();
+
+        return reader.offset;
+    }
+}
+
+class MeshProjectionBox extends FullBox {
+    static {
+        Atom.constructorMap['mshp'] = MeshProjectionBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Mesh Projection Box';
+        this.crc = 0;
+        this.encoding_four_cc = '';
+        this.meshs = [];
+    }
+
+    async parse(buffer, offset) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, this.size);
+        reader.skip(headerOffset);
+
+        this.crc = reader.readInt32();
+        this.encoding_four_cc = reader.readString(4);
+
+        let meshBuffer = buffer.slice(offset + reader.offset, offset + reader.offset + reader.remainingBytes);
+        if (this.encoding_four_cc === 'dfl8') {
+            let subsetBlob = new Blob([meshBuffer]);
+            let ds = new DecompressionStream('deflate-raw');
+            let decompressionStream = subsetBlob.stream().pipeThrough(ds);
+            try {
+                let result = await decompressionStream.getReader().read();
+                meshBuffer = result.value.buffer;
+            } catch(e) {
+                // nevermind
+                return this.size;
+            }
+        }
+
+        let meshOffset = 0;
+        while (meshOffset < this.size) {
+            var remaining = meshBuffer.byteLength - reader.offset;
+            var mesh = await Atom.create(meshBuffer, meshOffset, remaining);
+            meshOffset += mesh.size;
+            this.meshs.push(mesh);
+        }
+
+        return this.size;
+    }
+}
+
+class YouTubeMeshProjectionBox extends MeshProjectionBox {
+    static {
+        Atom.constructorMap['ytmp'] = YouTubeMeshProjectionBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'YouTube Mesh Projection Box';
+    }
+}
+
+class MeshBox extends Atom {
+    static {
+        Atom.constructorMap['mesh'] = MeshBox.bind(this);
+    }
+
+    constructor(parent) {
+        super(parent);
+
+        this.description = 'Mesh Box';
+    }
+
+    async parse(buffer, offset, size) {
+        var headerOffset = await super.parse(buffer, offset, this);
+        var reader = new DataReader(buffer, offset, size);
+        reader.skip(headerOffset);
+        var offset = 0;
+
+        let coordinate_count = reader.readUint32();
+        let ccsb = Math.ceil(Math.log2(coordinate_count * 2));
+
+        this.coordinates = [];
+        for (var i = 0; i < coordinate_count; ++i) {
+            let coordinate = reader.readFloat32();
+            this.coordinates.push(coordinate);
+        }
+
+        let bitReader = new BitReader(buffer, offset, size);
+        bitReader.skipBits(reader.offset * 8);
+
+        // const unsigned int(1) reserved = 0;
+        bitReader.skipBits(1)
+
+        let vertex_count = bitReader.readBits(31);
+        let vcsb = Math.ceil(Math.log2(vertex_count * 2));
+
+        let x_index = 0;
+        let y_index = 0;
+        let z_index = 0;
+        let u_index = 0;
+        let v_index = 0;
+
+        this.vertexes = [];
+        for (var i = 0; i < vertex_count; ++i) {
+            let x_index_delta = bitReader.readBits(ccsb);
+            let y_index_delta = bitReader.readBits(ccsb);
+            let z_index_delta = bitReader.readBits(ccsb);
+            let u_index_delta = bitReader.readBits(ccsb);
+            let v_index_delta = bitReader.readBits(ccsb);
+            x_index += x_index_delta;
+            y_index += y_index_delta;
+            z_index += z_index_delta;
+            u_index += u_index_delta;
+            v_index += v_index_delta;   
+            this.vertexes.push({
+                x: x_index,
+                y: y_index,
+                z: z_index,
+                u: u_index,
+                v: v_index,
+            });
+        }
+
+        // const unsigned int(1) padding[];
+        bitReader.skipBits(1);
+        this.vertexLists = [];
+        let vertex_list_count = bitReader.readBits(31);
+        for (i = 0; i < vertex_list_count; i++) {
+            let texture_id = bitReader.readBits(8);
+            let index_type = bitReader.readBits(8);
+            // const unsigned int(1) reserved = 0;
+            bitReader.readBits(1);
+            let index_count = bitReader.readBits(31);
+            let indexes = [];
+            let index = 0;
+            for (j = 0; j < index_count; j++) {
+                let index_as_delta = bitReader.readBits(vcsb);
+                index += index_as_delta;
+                indexes.push(index);
+            }
+            // const unsigned int(1) padding[];
+            bitReader.readBits(1);
+            this.vertexLists.push({
+                texture_id: texture_id,
+                index_type: index_type,
+                indexes: indexes,
+            });
+        }
+
+        return this.size;
     }
 }
