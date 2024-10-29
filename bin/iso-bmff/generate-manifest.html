@@ -18,11 +18,11 @@ tags: Video Formats
             reader.addEventListener('load', (e) => { onload(e, file); });
         }
 
-        function onload(e, file) {
+        async function onload(e, file) {
             var reader = e.target;
             var offset = 0;
             while (offset < reader.result.byteLength) {
-                var atom = Atom.create(reader.result, offset);
+                var atom = await Atom.create(reader.result, offset);
                 offset += atom.size;
                 atoms.push(atom);
             }
