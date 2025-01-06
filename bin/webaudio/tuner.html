@@ -60,15 +60,19 @@ tags: WebAudio
                 return;
             }
 
-            tuner.value = maxIndex;
-
-            let frequency = (maxIndex / dataArray.length * sampleRate / 2);
+            let frequency = (maxIndex / dataArray.length * sampleRate / 2) + (sampleRate / dataArray.length / 2);
             let semitone = Math.round(12 * Math.log2(frequency / 440)); // 440hZ = A4;
             let pureSemitoneFrequency = 440 * Math.pow(2, semitone / 12);
+            let nextSemitoneFrequency = 440 * Math.pow(2, (semitone + 1) / 12);
+            let prevSemitoneFrequency = 440 * Math.pow(2, (semitone - 1) / 12);
             let semitoneNote = semitones[ semitone % 12 ];
-            let partialSemitone = pureSemitoneFrequency - frequency;
+            let partialSemitone = frequency - pureSemitoneFrequency;
+            let partialPercentage = partialSemitone < 0
+            	? Math.abs(partialSemitone) / (pureSemitoneFrequency - prevSemitoneFrequency)
+            	: Math.abs(partialSemitone) / (nextSemitoneFrequency - pureSemitoneFrequency);
 
-            document.getElementById('note').innerText = `${ semitoneNote } ${ partialSemitone < 0 ? '-' : '+'} ${ Math.abs(Math.round(partialSemitone)) } hZ`;
+            tuner.value = partialPercentage * 100 * (partialSemitone < 0 ? -1 : 1);
+            note.innerText = `${ semitoneNote } ${ partialSemitone < 0 ? '-' : '+'} ${ Math.round(partialPercentage * 100) } %`;
 		};
 		updateTuner();
 	}
@@ -79,7 +83,7 @@ tags: WebAudio
 		<button id=start>start</button>
 	</div>
 	<div class=container>
-		<input type=range id=tuner></div>
+		<input type=range id=tuner min=-50 max=50 step=1></div>
 	</div>
 	<div class=container>
 		<span id=note></span>
