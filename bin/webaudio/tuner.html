@@ -1,0 +1,88 @@
+---
+title: Tuner
+tags: WebAudio
+---
+	<title>Tuner</title>
+	<style>
+		.container { padding: 5vmin; text-align: center; }
+		#start, #note { font-size: 10vmin; }
+		#tuner { width: 100%; }
+	</style>
+	<script>
+	window.addEventListener('load', event => {
+		document.getElementById('start').addEventListener('click', startTuner);
+	});
+
+	const semitones = [
+		'A',
+		'A#',
+		'B',
+		'C',
+		'C#',
+		'D',
+		'D#',
+		'E',
+		'F',
+		'F#',
+		'G',
+		'G#',
+	];
+
+	async function startTuner() {
+		document.getElementById('start').disabled = true;
+		let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        let sampleRate = stream.getAudioTracks()[0].getSettings().sampleRate;
+		let context = new AudioContext({sampleRate: sampleRate});
+		let node = context.createMediaStreamSource(stream);
+		let analyser = context.createAnalyser();
+		analyser.fftSize = Math.pow(2,Math.floor(Math.log2(sampleRate)));
+		let bufferLength = analyser.frequencyBinCount;
+		let dataArray = new Uint8Array(bufferLength);
+		analyser.getByteFrequencyData(dataArray);
+		node.connect(analyser);
+
+		updateTuner = () => {
+			requestAnimationFrame(updateTuner);
+			analyser.getByteFrequencyData(dataArray);
+            let maxIndex = 0;
+            let sum = 0;
+            for (var i = 0; i < dataArray.length; ++i) {
+                sum += dataArray[i];
+                if (dataArray[i] > dataArray[maxIndex])
+                    maxIndex = i;
+            }
+            let averageValue = sum / dataArray.length;
+            let maxValue = dataArray[maxIndex];
+
+            if (maxValue <= averageValue * 2) {
+                tuner.value = 0;
+                document.getElementById('note').innerText = '';
+                return;
+            }
+
+            tuner.value = maxIndex;
+
+            let frequency = (maxIndex / dataArray.length * sampleRate / 2);
+            let semitone = Math.round(12 * Math.log2(frequency / 440)); // 440hZ = A4;
+            let pureSemitoneFrequency = 440 * Math.pow(2, semitone / 12);
+            let semitoneNote = semitones[ semitone % 12 ];
+            let partialSemitone = pureSemitoneFrequency - frequency;
+
+            document.getElementById('note').innerText = `${ semitoneNote } ${ partialSemitone < 0 ? '-' : '+'} ${ Math.abs(Math.round(partialSemitone)) } hZ`;
+		};
+		updateTuner();
+	}
+	</script>
+</head>
+<body>
+	<div class=container>
+		<button id=start>start</button>
+	</div>
+	<div class=container>
+		<input type=range id=tuner></div>
+	</div>
+	<div class=container>
+		<span id=note></span>
+	</div>
+</body>
+</html>
