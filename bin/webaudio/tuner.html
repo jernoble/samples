@@ -62,10 +62,13 @@ tags: WebAudio
 
             let frequency = (maxIndex / dataArray.length * sampleRate / 2) + (sampleRate / dataArray.length / 2);
             let semitone = Math.round(12 * Math.log2(frequency / 440)); // 440hZ = A4;
+            let localSemitone = semitone % 12;
+            if (localSemitone < 0)
+            	localSemitone += 12;
             let pureSemitoneFrequency = 440 * Math.pow(2, semitone / 12);
             let nextSemitoneFrequency = 440 * Math.pow(2, (semitone + 1) / 12);
             let prevSemitoneFrequency = 440 * Math.pow(2, (semitone - 1) / 12);
-            let semitoneNote = semitones[ semitone % 12 ];
+            let semitoneNote = semitones[ localSemitone ];
             let partialSemitone = frequency - pureSemitoneFrequency;
             let partialPercentage = partialSemitone < 0
             	? Math.abs(partialSemitone) / (pureSemitoneFrequency - prevSemitoneFrequency)
