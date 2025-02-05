@@ -1,0 +1,22 @@
+---
+title: Vertical Cues (HLS)
+tags: Subtitles
+---
+<meta name="viewport" content="width=device-width">
+<title>Vertical Cues</title>
+<style>
+</style>
+<script src=webvtt-helper.js></script>
+<script>
+window.addEventListener('load', async event => { 
+	let video = document.querySelector('video');
+	video.textTracks[0].mode = 'showing';
+	addNextPreviousButtons(video);
+});
+
+</script>
+</head>
+<body>
+<div>
+	<video muted playsinline controls src="../../common_assets/media/BipBop/vertical-cues.m3u8"></video>
+</div>
