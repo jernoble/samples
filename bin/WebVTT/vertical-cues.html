@@ -21,6 +21,7 @@ tags: Subtitles
 	}
 	.vertical span { background-color: black }
 	.vertical span ruby > rt { background-color: black }
+	.vertical span .num { text-combine-upright: all }
 </style>
 <script src=webvtt-helper.js></script>
 <script>
@@ -44,7 +45,7 @@ window.addEventListener('load', async event => {
 		<div class="vertical">
 			<span>縦に<ruby>ルビー<rt>ruby</rt></ruby></span>
 			<br>
-			<span>縦の01数字</span>
+			<span>縦の<span class="num">01</span>数字</span>
 		</div>
 	</div>
 </div>
