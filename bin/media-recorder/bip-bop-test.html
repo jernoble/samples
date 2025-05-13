@@ -1,0 +1,165 @@
+---
+title: Bip-Bop Test
+tags: MediaRecorder
+---
+<script>
+async function generateBipBop(options) {
+    var context = new OfflineAudioContext(options.channels, options.bipDuration * options.sampleRate, options.sampleRate);
+    let bip = context.createOscillator();
+    bip.frequency.value = options.bipFrequency;
+    let bipGain = context.createGain();
+    bipGain.gain.value = options.bipAmplitude / 2;
+    let bipShift = context.createConstantSource();
+    bipShift.offset.value = options.bipAmplitude + 0.01;
+    bip.connect(bipGain);
+    bipShift.connect(bipGain);
+    bipGain.connect(context.destination);
+    bip.start(0);
+    bip.stop(options.bipDuration);
+    bipShift.start(0);
+    bipShift.stop(options.bipDuration);
+    let bipBuffer = await context.startRendering();
+
+    let loopingBuffer = context.createBuffer(options.channels, options.duration * options.sampleRate, options.sampleRate);
+
+    for (var index = 0; index < loopingBuffer.length; index += options.sampleRate) {
+        for (var channel = 0; channel < options.channels; ++channel) {
+            loopingBuffer.copyToChannel(bipBuffer.getChannelData(channel), channel, index);
+        }
+    }
+    return loopingBuffer;
+};
+
+let context;
+let stream;
+let recorder;
+let mediaURL;
+let mediaData;
+let outputData;
+
+window.addEventListener('load', async event => {
+    const channels = 1;
+    const sampleRate = 4800;
+
+    let loopingBuffer = await generateBipBop({
+        channels: channels,
+        sampleRate: sampleRate,
+        duration: 60.0,
+        humFrequency: 125.0,
+        humAmplitude: 0.10,
+        bipFrequency: 1500.0,
+        bipAmplitude: 1.00,
+        bipDuration: 0.05,
+    });
+
+    consoleWrite(`Creating a source buffer of duration: ${loopingBuffer.duration * 1000}ms.`);
+    consoleWrite(`Verifying distance between peaks in source buffer:`);
+    checkBuffer(loopingBuffer);
+    consoleWrite(` `);
+
+    context = new AudioContext({sampleRate: sampleRate});
+    if (context.state !== "suspended")
+        context.suspend();
+
+    let streamNode = context.createMediaStreamDestination();
+    stream = streamNode.stream;
+
+    let bufferSource = context.createBufferSource();
+    bufferSource.buffer = loopingBuffer;
+    bufferSource.loop = true;
+    bufferSource.start(1);
+    bufferSource.connect(streamNode);
+
+    document.getElementById('start').addEventListener('click', start);
+    document.getElementById('stop').addEventListener('click', stop);
+    document.getElementById('check').addEventListener('click', check);
+});
+
+function dataAvailable(event) {
+    if (mediaURL)
+        URL.revokeObjectURL(mediaURL);
+    mediaData = new Blob([mediaData, event.data]);
+    mediaURL = URL.createObjectURL(mediaData);
+
+    let audio = document.querySelector('audio');
+    while (audio.firstChild)
+        audio.removeChild(audio.firstChild);
+    let source = document.createElement('source');
+    source.type = event.data.type;
+    source.src = mediaURL;
+    audio.appendChild(source);
+    audio.load();
+}
+
+function checkBuffer(buffer) {
+    let leadingEdgeIndexs = [];
+    let waitingForZero = false;
+
+    buffer.getChannelData(0).forEach((sample, index) => {
+        if (waitingForZero && sample != 0)
+            return;
+
+        if (sample != 0) {
+            leadingEdgeIndexs.push(index);
+            waitingForZero = true;
+            return;
+        }
+
+        if (waitingForZero === true)
+            waitingForZero = false;
+    });
+
+    let leadingEdgeTimes = leadingEdgeIndexs.map(index => Math.round(index / buffer.sampleRate * 1000));
+
+    let deltas = leadingEdgeTimes.map((time, index, array) => {
+        if (index === 0)
+            return 0;
+        return time - array[index - 1];
+    });
+    deltas.shift();
+
+    let min = Math.min(...deltas);
+    let max = Math.max(...deltas);
+    let length = deltas.length;
+    let mean = Math.round(deltas.reduce((a, b) => a + b) / length);
+    let stddev = Math.sqrt(deltas.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / length).toFixed(3);
+
+    consoleWrite(`Min: ${min}ms, max: ${max}ms, avg: ${mean}ms, stddev: ${stddev}`);}
+
+function start() {
+    consoleWrite(' ');
+    consoleWrite(`Starting rendering of sourceBuffer`);
+    context.resume();
+    recorder = new MediaRecorder(stream, {mimeType: "audio/mp4; codecs=alac"});
+    mediaData = new Blob();
+    recorder.addEventListener('dataavailable', dataAvailable);
+    recorder.start(10000);
+}
+
+function stop() {
+    consoleWrite(' ');
+    consoleWrite(`Stopping rendering of sourceBuffer`);
+    context.suspend();
+    recorder.stop();
+}
+
+function consoleWrite(entry) {
+    let line = document.getElementById('console').appendChild(document.createElement('div'));
+    line.innerText = entry;
+}
+
+async function check() {
+    consoleWrite(' ');
+    consoleWrite(`Verifying rendering of output data:`);
+
+    let mediaDataBytes = await mediaData.bytes();
+    outputData = await context.decodeAudioData(mediaDataBytes.buffer);
+    checkBuffer(outputData);
+}
+</script>
+<body>
+    <button id=start>start</button> <button id=stop>stop</button> <button id=check>check</button>
+    <br>
+    <audio controls></audio>
+    <div id=console></div>
+</body>
