@@ -1,0 +1,20 @@
+:host {
+    position: relative;
+    display: inline-block;
+}
+
+#root {
+	border: .25em solid black;
+}
+
+#target {
+	background-color: green;
+}
+
+#root, #target {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
