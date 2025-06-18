@@ -38,9 +38,11 @@ class VisibilityContainer extends HTMLElement {
         this.target.addEventListener('fullscreenchange', this);
 
         this.observer =  new IntersectionObserver(entries => {
-            let log = document.createElement('div');
-            log.innerText = `IntersectionObserver() visibility(${this.target.checkVisibility()})`;
-            this.target.appendChild(log);
+            entries.forEach(entry => {
+                let log = document.createElement('div');
+                log.innerText = `IntersectionObserver() visibility(${this.target.checkVisibility()}), intersecting(${entry.isIntersecting}), percent(${this.calculateVisibilityPercentage(entry.boundingClientRect)})`;
+                this.target.appendChild(log);
+            })
         });
         this.observer.observe(this.target);
     }
@@ -56,7 +58,7 @@ class VisibilityContainer extends HTMLElement {
 
     handleEvent(event) {
         let log = document.createElement('div');
-        log.innerText = `EVENT(${event.type}) visibility(${this.target.checkVisibility()})`;
+        log.innerText = `EVENT(${event.type}) visibility(${this.target.checkVisibility()}), percent(${this.calculateVisibilityPercentage(this.target.getBoundingClientRect())})`;
         this.target.appendChild(log);
     }
 
@@ -64,7 +66,16 @@ class VisibilityContainer extends HTMLElement {
     }
 
     calculateVisibilityPercentage(bounds) {
-        return 'NaN';
+        let boundsArea = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
+        if (!boundsArea)
+            return "NaN";
+        let viewportBounds = new DOMRect(window.visualViewport.offsetLeft, window.visualViewport.offsetTop, window.visualViewport.width, window.visualViewport.height);
+        let maxLeft = Math.max(bounds.left, viewportBounds.left);
+        let minRight = Math.min(bounds.right, viewportBounds.right);
+        let maxTop = Math.max(bounds.top, viewportBounds.top);
+        let minBottom = Math.min(bounds.bottom, viewportBounds.bottom);
+        let intersectionArea = (minRight - maxLeft) * (minBottom - maxTop);
+        return intersectionArea / boundsArea;
     }
 
     #template = `
