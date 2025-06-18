@@ -75,7 +75,7 @@ class VisibilityContainer extends HTMLElement {
         let maxTop = Math.max(bounds.top, viewportBounds.top);
         let minBottom = Math.min(bounds.bottom, viewportBounds.bottom);
         let intersectionArea = (minRight - maxLeft) * (minBottom - maxTop);
-        return intersectionArea / boundsArea;
+        return (100 * intersectionArea / boundsArea).toFixed(0) + '%';
     }
 
     #template = `
