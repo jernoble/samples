@@ -1,0 +1,77 @@
+---
+title: Audio Playback Rate
+tags: Audio
+---
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+function waitFor(target, type) {
+    return new Promise(resolve => {
+        target.addEventListener(type, resolve, { once: true });
+    });
+}
+
+window.addEventListener('load', async event => {
+    let setUpPlayer = container => {
+        let togglePlaybackButton = container.querySelector('.toggle-playback');
+        let playbackRateSlider = container.querySelector('.playback-rate');
+        let audio = container.querySelector('audio');
+
+        let updateToggleButton = () => {
+            togglePlaybackButton.innerText = audio.paused ? 'Play' : 'Pause';
+        };
+        audio.addEventListener('playing', updateToggleButton);
+        audio.addEventListener('pause', updateToggleButton);
+
+        let updatePlaybackRate = () => {
+            playbackRateSlider.value = audio.playbackRate;
+        };
+        audio.addEventListener('ratechange', updatePlaybackRate);
+
+        togglePlaybackButton.addEventListener('click', event => {
+            audio.paused ? audio.play() : audio.pause();
+        });
+        playbackRateSlider.addEventListener('input', event => {
+            audio.playbackRate = event.target.value;
+        });
+    };
+
+    setUpPlayer(document.getElementById('file'));
+    let fileAudio = document.querySelector('#file audio');
+    fileAudio.src = '../../common_assets/media/Overworld.mp4';
+
+    setUpPlayer(document.getElementById('mse'));
+
+    let mseAudio = document.querySelector('#mse audio');
+    let response = await fetch('../../common_assets/media/Overworld.mp4');
+    let contents = await response.arrayBuffer();
+    let source = new MediaSource();
+    let url = URL.createObjectURL(source);
+    mseAudio.src = url;
+    await waitFor(source, 'sourceopen');
+    let buffer = source.addSourceBuffer('video/mp4; codecs="mp4a.40.2"');
+    buffer.appendBuffer(contents);
+});
+</script>
+<style>
+    audio { display: none; }
+    .playback-rate { width: 20em; }
+    .group {
+        border: 1px solid black;
+        padding: 1em;
+    }
+</style>
+<body>
+    <div class="group" id="file">
+        <span class=section>File:</span><br>
+        <button class=toggle-playback>Play</button><br>
+        Rate: <input class=playback-rate type=range step=0.01 min=-2 max=2 value=1>
+        <audio loop class=audio></audio>
+    </div><br>
+
+    <div class="group" id="mse">
+        <span class=section>MSE:</span><br>
+        <button class=toggle-playback>Play</button><br>
+        Rate: <input class=playback-rate type=range step=0.01 min=-2 max=2 value=1>
+        <audio loop class=audio></audio>
+    </div>
+</body>
