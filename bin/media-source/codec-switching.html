@@ -1,0 +1,327 @@
+---
+title: MSE Codec Switching
+tags: Video MSE
+---
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Codec Switching Demo</title>
+	<style>
+		body { box-sizing: border-box; }
+		#video-wrapper {
+			display: inline-block;
+			position: relative;
+			user-select: none;
+			max-width: 100%;
+			width: 1280px;
+		}
+		#video-wrapper .inner {
+			display: inline-block;
+			position: relative;
+			left: 0;
+			top: 0;
+			width: 100%;
+			padding-bottom: 56.25%;
+		}
+		#video-wrapper:hover button {
+			opacity: 1;
+		}
+		#video-wrapper button { 
+			opacity: 0;
+
+			-webkit-appearance: none;
+			border: 0;
+			margin: 0;
+			position: absolute;
+			text-align: center;
+			height: 2em;
+			line-height: 2em;
+			width: 2em;
+			font-size: 3em;
+			top: calc(50% - 1em);
+			left: calc(50% - 1em);
+			border-radius: 50%;
+			background-color: rgb(50, 50, 50);
+			color: white;
+		}
+		#video-wrapper:active button span::before {
+			transform: scale(.90, .90);
+		}
+		#video-wrapper button span::before {
+			content: "\25B6";
+			transition: transform 0.10s;
+			display: inline-block;
+			position: relative;
+			bottom: .05em;
+			left: .05em;
+		}
+		#video-wrapper button.playing span::before {
+			content: "||";
+			left: 0em;
+			bottom: .1em;
+			font-weight: bolder;
+		}
+		#video-wrapper .error {
+			display: none;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			height: 1em;
+			padding: 0.5em;
+			border-radius: 0.5em;
+			background-color: red;
+			color: white;
+			font-size: 6em;
+			font-family: monospace;
+			line-height: 1em;
+    		text-align: center;
+    		z-index: 1;
+		}
+		#video-wrapper .error.visible {
+			display: block;
+		}
+		#info {
+			float: right;
+			right: 1em;
+			bottom: 1em;
+			padding: .5em;
+			background-color: rgb(20, 20, 20);
+			color: white;
+		}
+		#video-wrapper .info.visible {
+			opacity: 1;
+		}
+		#buttons td, #buttons th {
+			padding: 0.5em;
+			text-align: center;
+		}
+		video {
+			position: absolute;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: black;
+		}
+	</style>
+	<script>
+		var encoders = ['h264', 'hevc'];
+		var encoderNames = {
+			h264: 'H.264',
+			hevc: 'HEVC',
+		};
+		var resolutions = ['320x240-15hz', '640x480-30hz', '720p-30hz', '1080p-30hz', '4k-30hz', '4k-60hz'];
+
+		var variants = {};
+		var promises = [];
+		encoders.forEach(encoder => {
+			resolutions.forEach(resolution => {
+				var fetchVariant = async () => {
+					var response = await fetch(`variants/${encoder}-${resolution}.mp4`);
+					var buffer = await response.arrayBuffer();
+					response = await fetch(`variants/${encoder}-${resolution}.json`);
+					var variantInfo = await response.json();
+
+					if (typeof variants[resolution] === "undefined")
+						variants[resolution] = {};
+
+					variants[resolution][encoder] = {
+						encoder: encoder,
+						resolution: resolution,
+						buffer: buffer,
+						info: variantInfo,
+					};
+				};
+				promises.push(fetchVariant());
+			});
+		});
+		Promise.all(promises).then(() => {
+			let buttons = document.querySelector('#buttons');
+			let headerRow = document.createElement('tr');
+			headerRow.appendChild(document.createElement('th'));
+			buttons.append(headerRow);
+			resolutions.forEach(resolution => {
+				let resolutionHeader = document.createElement('th');
+				resolutionHeader.innerText = resolution;
+				headerRow.append(resolutionHeader);
+			});
+			let body = document.createElement('tbody');
+			buttons.appendChild(body);
+
+			encoders.forEach(encoder => {
+				let row = document.createElement('tr');
+				row.className = 'row';
+				let rowHeader = document.createElement('th');
+				rowHeader.className = 'cell';
+				rowHeader.innerText = encoderNames[encoder];
+				row.appendChild(rowHeader);
+				resolutions.forEach(resolution => {
+					let cell = document.createElement('td');
+					row.appendChild(cell);
+					var button = document.createElement('input');
+					button.type = 'radio';
+					button.name = 'variant';
+					button.innerText = ``;
+					button.addEventListener('click', switchTo);
+					button.variant = variants[resolution][encoder];
+					button.encoder = encoder;
+					button.className = 'cell';
+					cell.appendChild(button);
+				});
+				body.appendChild(row);
+			});
+		});
+
+		function waitFor(target, type) {
+		    return new Promise(resolve => {
+		        target.addEventListener(type, event => {
+		            resolve(event);
+		        }, { once: true });
+		    });
+		}
+
+		function logString(string) {
+			let log = document.querySelector('#log');
+			let logLine = document.createElement('div');
+			logLine.innerText = string;
+			log.insertBefore(logLine, log.firstChild);
+		}
+
+		function logEvent(target, name) {
+			target.addEventListener(name, event => {
+				logString(`EVENT(${event.type}) `);
+			});
+		}
+
+		var mediaSource;
+		var sourceBuffer;
+		var currentVariant;
+		async function switchTo(event) {
+			let button = event.target;
+			let variant = button.variant;
+			logString(`Switch to: ${variant.encoder}-${variant.resolution}, ${variant.info.codec}`);
+
+			await startMSE();
+			if (currentVariant !== variant && sourceBuffer.changeType) {
+				try {
+					sourceBuffer.changeType(`video/mp4; codecs=${variant.info.codec}`);
+					currentVariant = variant;
+				} catch (e) {
+					logString(`Codec ${varaiant.codec} not supported`);
+					return;
+				}
+			}
+			currentVariant = variant;
+			loadAndPurge();
+		}
+
+		async function startMSE() {
+			if (mediaSource)
+				return;
+
+			var video = document.querySelector('video');
+			logEvent(video, 'load');
+			logEvent(video, 'play');
+			logEvent(video, 'error');
+
+			var textTrack = video.addTextTrack('metadata');
+
+			mediaSource = new MediaSource;
+	        video.srcObject = mediaSource;
+	        logEvent(mediaSource, 'sourceopen');
+	        await waitFor(mediaSource, 'sourceopen');
+
+	        sourceBuffer = mediaSource.addSourceBuffer('video/mp4');
+	        logEvent(sourceBuffer, 'update');
+	        video.addEventListener('timeupdate', loadAndPurge);
+		}
+
+		var bufferedSegments = [];
+		var lastPromise = null;
+		async function loadAndPurge() {
+			if (lastPromise)
+				await lastPromise;
+
+			lastPromise = (async () => {
+				if (!currentVariant || !sourceBuffer)
+					return;
+
+				var video = document.querySelector('video');
+				var lastBufferedTime = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+				if (lastBufferedTime - video.currentTime > 1)
+					return;
+
+				while (sourceBuffer.updating)
+					await waitFor(sourceBuffer, 'updateend');
+
+				sourceBuffer.timestampOffset = lastBufferedTime;
+			    sourceBuffer.appendBuffer(currentVariant.buffer);
+			    await waitFor(sourceBuffer, 'updateend');
+
+			    var newBufferedEnd = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+			    bufferedSegments.push(newBufferedEnd);
+
+			    var segmentEnd;
+			    while (segmentEnd = bufferedSegments.shift()) {
+			    	if (segmentEnd >= video.currentTime) {
+			    		bufferedSegments.unshift(segmentEnd);
+			    		break;
+			    	}
+			    	sourceBuffer.remove(0, segmentEnd);
+			    }
+
+			    let track = video.textTracks[0];
+			    let variant = currentVariant;
+			    let cue = new DataCue(lastBufferedTime, newBufferedEnd, '');
+			    cue.addEventListener('enter', event => {
+			    	let info = document.querySelector('#info');
+			    	info.innerText = `Codec: ${variant.info.codec}\n` +
+						`Encoder: ${variant.info.encoder}\n` +
+						`Resolution: ${variant.info.name}\n` +
+						`Size: ${Math.floor(variant.buffer.byteLength / 1024 / (newBufferedEnd - lastBufferedTime))} kb/s\n`
+						;
+			    });
+			    track.addCue(cue);
+
+			    if (video.paused)
+			    	video.play();
+			})();
+		}
+
+		function togglePlay() {
+			var video = document.querySelector('video');
+			if (video.paused)
+				video.play();
+			else
+				video.pause();
+		}
+
+		window.addEventListener('load', event => {
+			var video = document.querySelector('video');
+			video.addEventListener('play', event => {
+				document.querySelector('#video-wrapper button').classList.add('playing');
+			});
+			video.addEventListener('pause', event => {
+				document.querySelector('#video-wrapper button').classList.remove('playing');
+			});
+			video.addEventListener('error', event => {
+				document.querySelector('#video-wrapper .error').classList.add('visible');
+			});
+		}, {once: true});
+	</script>
+</head>
+<body>
+	<span id="video-wrapper" class="outer">
+		<span class="inner">
+			<video></video>
+			<div class="error">ERROR</div>
+			<button onclick="togglePlay()"><span></span></button>
+		</span>
+	</span>
+
+	<div id="info"></div>
+	<table id="buttons"></table>
+	<div id="log"></div>
+</body>
+</html>
