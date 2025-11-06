@@ -1,0 +1,35 @@
+---
+title: Subtitle Languages
+tags: Subtitles Video
+---
+<meta name="viewport" content="width=device-width">
+<title>Subtitle Languages</title>
+<style>
+	video {
+		border: 1px solid black;
+		width: 640px;
+		max-width: 100%;
+	}
+</style>
+<script src=webvtt-helper.js></script>
+<script>
+window.addEventListener('load', async event => { 
+	let video = document.querySelector('video');
+	video.load();
+	addNextPreviousButtons(video);
+
+});
+
+</script>
+</head>
+<body>
+<div>
+	<video muted playsinline controls disableremoteplayback>
+		<source src="../../common_assets/media/BipBop.mp4" type="video/mp4; codecs=hvc1.1.6.L123.B0">
+		<source src="../../common_assets/media/BipBop.webm" type="video/webm">
+		<track src="languages/en.vtt" kind="captions" srclang="en" label="English">
+		<track src="languages/es.vtt" kind="captions" srclang="es" label="Spanish">
+		<track src="languages/de.vtt" kind="captions" srclang="de" label="German">
+		<track src="languages/ja.vtt" kind="captions" srclang="ja" label="Japanese">
+	</video>
+</div>
