@@ -1,0 +1,18 @@
+---
+title: Custom Media Controls
+tags: Video Subtitles
+---
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Media Controls</title>
+<script src="video-container.js"></script>
+</head>
+<body>
+    <video-container>
+        <source slot="source" src="../../common_assets/media/BipBop.mp4" type="video/mp4">
+        <source slot="source" src="../../common_assets/media/BipBop.webm" type="video/webm">
+        <track slot="track" src="../WebVTT/languages/en.vtt" kind="captions" srclang="en" label="English">
+        <track slot="track" src="../WebVTT/languages/es.vtt" kind="captions" srclang="es" label="Spanish">
+        <track slot="track" src="../WebVTT/languages/de.vtt" kind="captions" srclang="de" label="German">
+        <track slot="track" src="../WebVTT/languages/ja.vtt" kind="captions" srclang="ja" label="Japanese">
+    </video-container>
+</body>

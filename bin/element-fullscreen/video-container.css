@@ -116,6 +116,7 @@
         mask-size: 100% 100%;
     }
 
+    .video-controls .button.hidden { display: none; }
 
     #root:has(video:playing) .video-controls .play-pause .icon { mask-image: url(Pause.svg) }
     #root:has(video:paused) .video-controls .play-pause .icon { mask-image: url(Play.svg) }
@@ -124,6 +125,7 @@
     #root:has(video:muted) .video-controls .mute .icon { mask-image: url(VolumeMuted.svg); }
 
     .video-controls .pip .icon { mask-image: url(PipIn.svg); }
+    .video-controls .captions .icon { mask-image: url(MediaSelector.svg); }
 
     .video-controls .fullscreen .icon { mask-image: url(EnterFullscreen.svg); }
     :host(:fullscreen) .video-controls .fullscreen .icon { mask-image: url(ExitFullscreen.svg); }

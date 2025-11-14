@@ -18,7 +18,25 @@ class VideoContainer extends HTMLElement {
 
         this.#video = this.shadowRoot.querySelector('video');
         this.#video.playsInline = this.getAttribute('playsInline') || true;
-        this.#video.src = this.getAttribute('src');
+
+        let sourceSlot = this.shadowRoot.querySelector('slot[name=source]');
+        sourceSlot.assignedElements({ flatten: true }).forEach(element => this.#video.appendChild(element.cloneNode()));
+
+        sourceSlot.addEventListener('slotchange', event => {
+            this.#video.querySelectorAll('source').forEach(source => source.remove());
+            event.target.assignedElements({ flatten: true }).forEach(element => this.#video.appendChild(element.cloneNode()));
+        });
+
+        let trackSlot = this.shadowRoot.querySelector('slot[name=track]');
+        trackSlot.assignedElements({ flatten: true }).forEach(element => this.#video.appendChild(element.cloneNode()));
+
+        trackSlot.addEventListener('slotchange', event => {
+            this.#video.querySelectorAll('track').forEach(track => track.remove());
+            event.target.assignedElements({ flatten: true }).forEach(element => this.#video.appendChild(element.cloneNode()));
+        });
+
+        if (this.hasAttribute('src'))
+            this.#video.src = this.getAttribute('src');
         this.#video.load();
 
         let timeline = this.shadowRoot.querySelector('.timeline');
@@ -43,6 +61,10 @@ class VideoContainer extends HTMLElement {
             remainingTime.innerText = formatTime(this.#video.currentTime - this.#video.duration);
             timeline.value = this.#video.currentTime;
         });
+
+        this.#video.textTracks.addEventListener('addtrack', event => { this.#updateTextTracks(); })
+        this.#video.textTracks.addEventListener('removetrack', event => { this.#updateTextTracks(); })
+        this.#video.textTracks.addEventListener('change', event => { this.#updateTextTracks(); })
 
         this.shadowRoot.querySelector('.play-pause').addEventListener('click', event => {
             this.#video.paused ? this.#video.play() : this.#video.pause();
@@ -84,6 +106,13 @@ class VideoContainer extends HTMLElement {
         this.shadowRoot.querySelector('.video-controls-bar').addEventListener('click', event => {
             event.stopPropagation();
         });
+
+        let captionsButton = this.shadowRoot.querySelector('.captions');
+        captionsButton.classList.toggle('hidden', this.#video.showCaptionDisplaySettings == undefined);
+
+        captionsButton.addEventListener('click', event => {
+            this.#video.showCaptionDisplaySettings({anchorNode: event.target, positionArea: "top center"});
+        });
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -103,11 +132,16 @@ class VideoContainer extends HTMLElement {
         this.#video.appendChild(sourceElement);
     }
 
+    #updateTextTracks() {
+        console.log("updateTextTracks");
+    }
+
     #template = `
 <link rel="stylesheet" href="video-container.css">
 <div id=root>
     <video>
-        <slot name="source1"></slot>
+        <slot name="source"></slot>
+        <slot name="track"></slot>
     </video>
     <div class=video-controls>
         <div class=video-controls-bar>
@@ -120,6 +154,9 @@ class VideoContainer extends HTMLElement {
             <div class="current-time">00:00</div>
             <input type=range class="timeline" step=0.1 min=0 max=1 value=0>
             <div class="remaining-time">00:00</div>
+            <div class="captions button">
+                <div class=icon></div>
+            </div>
             <div class="pip button">
                 <div class=icon></div>
             </div>
