@@ -36,17 +36,31 @@ tags: Subtitles
         display: inline-block;
         text-align: center;
     }
-    ::cue {
+    ::cue, ::cue(rt) {
         color: rgb(128, 0, 0);
         background-color: rgb(255, 0, 0);
     }
-    .reference-cue {
+    .reference-cue, .reference-cue ruby > rt {
         color: rgb(128, 128, 0);
         background-color: rgb(258, 258, 0);
         white-space: pre-line;
     }
     ::cue, .reference-track-display {
         font: 5cqmin/1 Ahem;
+    }
+
+    ::cue(rt), .reference-track-display ruby > rt {
+        font: -webkit-ruby-text Ahem;
+    }
+
+    /* Reset Accessibility Pref Settings: */
+    ::cue {
+        stroke-width: 0;
+    }
+    video::-webkit-media-text-track-display-backdrop {
+        border: 0;
+        padding: 0;
+        background-color: transparent;
     }
 </style>
 <script>
