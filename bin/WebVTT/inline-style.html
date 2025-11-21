@@ -28,9 +28,8 @@ tags: Subtitles Video
 <script>
 window.addEventListener('load', async event => { 
 	let video = document.querySelector('video');
-	video.load();
+	video.textTracks[0].mode = 'showing';
 	addNextPreviousButtons(video);
-
 });
 
 </script>
