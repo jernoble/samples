@@ -134,6 +134,20 @@ class VideoContainer extends HTMLElement {
 
     #updateTextTracks() {
         console.log("updateTextTracks");
+
+        let captionsButton = this.shadowRoot.querySelector('.captions');
+        if (this.#video.showCaptionDisplaySettings == undefined) {
+            captionsButton.classList.toggle('hidden', true);
+            return;
+        }
+
+        if (this.#video.textTracks.length === 0) {
+            captionsButton.classList.toggle('hidden', true);
+            return;
+        }
+
+        captionsButton.classList.toggle('hidden', false);
+        this.#video.textTracks[0].mode = 'showing';
     }
 
     #template = `
