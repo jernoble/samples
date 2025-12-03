@@ -75,12 +75,14 @@
         background-color: black;
     }
 
+    .video-controls .button { cursor: pointer; }
+    .video-controls .button:active {
+        transform: scale(1.1);
+        color: cyan;
+    }
+
     .video-controls .button .icon:hover {
         background-color: cyan;
-        cursor: pointer;
-    }
-    .video-controls .button .icon:active {
-        transform: scale(1.1);
     }
     .video-controls .timeline {
         flex-grow: 1;
@@ -115,6 +117,26 @@
         mask-repeat: no-repeat;
         mask-size: 100% 100%;
     }
+
+    /* Captions support */
+
+    .video-controls .captions {
+        anchor-name: --captions-button;
+    }
+
+    .video-controls .menu {
+        background-color: black;
+        color: white;
+        border: 1px solid white;
+    }
+
+    .video-controls .menu.captions-menu {
+        position: absolute;
+        position-anchor: --captions-button;
+        position-area: top center;
+    }
+
+    .video-controls .menu .section.hidden { display: none; }
 
     .video-controls .button.hidden { display: none; }
 

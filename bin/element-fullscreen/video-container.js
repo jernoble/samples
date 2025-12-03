@@ -109,10 +109,16 @@ class VideoContainer extends HTMLElement {
 
         let captionsButton = this.shadowRoot.querySelector('.captions');
         captionsButton.classList.toggle('hidden', this.#video.showCaptionDisplaySettings == undefined);
+        captionsButton.addEventListener('click', event => this.#toggleCaptions(event) );
 
-        captionsButton.addEventListener('click', event => {
-            this.#video.showCaptionDisplaySettings({anchorNode: event.target, positionArea: "top center"});
-        });
+        let captionsOnOption = this.shadowRoot.querySelector('.captions-menu #captions-on');
+        captionsOnOption.addEventListener('change', event => this.#updateCaptionsEnabled(event) );
+
+        let captionsOffOption = this.shadowRoot.querySelector('.captions-menu #captions-off');
+        captionsOffOption.addEventListener('change', event => this.#updateCaptionsEnabled(event) );
+
+        let captionsSettingsButton = this.shadowRoot.querySelector('.captions-menu .section.styles .button');
+        captionsSettingsButton.addEventListener('click', event => this.#showCaptionSettings(event) );
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -136,10 +142,6 @@ class VideoContainer extends HTMLElement {
         console.log("updateTextTracks");
 
         let captionsButton = this.shadowRoot.querySelector('.captions');
-        if (this.#video.showCaptionDisplaySettings == undefined) {
-            captionsButton.classList.toggle('hidden', true);
-            return;
-        }
 
         if (this.#video.textTracks.length === 0) {
             captionsButton.classList.toggle('hidden', true);
@@ -147,7 +149,37 @@ class VideoContainer extends HTMLElement {
         }
 
         captionsButton.classList.toggle('hidden', false);
-        this.#video.textTracks[0].mode = 'showing';
+
+        let captionsOnOption = this.shadowRoot.querySelector('.captions-menu #captions-on');
+        captionsOnOption.checked = this.#hasEnabledTracks;
+
+        let stylesSection = this.shadowRoot.querySelector('.captions-menu .section.styles');
+        stylesSection.classList.toggle('hidden', this.#video.showCaptionDisplaySettings == undefined)
+    }
+
+    #toggleCaptions(event) {
+        let captionsButton = this.shadowRoot.querySelector('.captions');
+        let captionsMenu = this.shadowRoot.querySelector('.captions-menu');
+        captionsMenu?.togglePopover({source: captionsButton});
+    }
+
+    async #showCaptionSettings(event) {
+        await this.#video.showCaptionDisplaySettings({anchorNode: event.target, positionArea: "right center"});
+        let captionsMenu = this.shadowRoot.querySelector('.captions-menu');
+        captionsMenu?.hidePopover();
+    }
+
+    #updateCaptionsEnabled(event) {
+        let captionsOnOption = this.shadowRoot.querySelector('.captions-menu #captions-on');
+        if (captionsOnOption?.checked) {
+            this.#video.textTracks[0].mode = 'showing';
+        } else {
+            Array.from(this.#video.textTracks).forEach(track => track.mode = 'disabled');
+        }
+    }
+
+    get #hasEnabledTracks() {
+        return Array.from(this.#video.textTracks).some(track => track.mode === 'showing' && ['captions', 'subtitles'].includes(track.kind))
     }
 
     #template = `
@@ -170,6 +202,25 @@ class VideoContainer extends HTMLElement {
             <div class="remaining-time">00:00</div>
             <div class="captions button">
                 <div class=icon></div>
+            </div>
+            <div class="menu captions-menu" popover>
+                <div class="item disabled">Subtitles</div>
+                <div class="item">
+                    <input type="radio" id="captions-on" name="enable-captions" value="on" />
+                    <label for="captions-on">On</label>
+                </div>
+                <div class="item">
+                    <input type="radio" id="captions-off" name="enable-captions" value="off" checked />
+                    <label for="captions-off">Off</label>
+                </div>
+                <div class="section languages">
+                    <hr />
+                    <div class="item button submenu">Languages</div>
+                </div>
+                <div class="section styles">
+                    <hr />
+                    <div class="item button submenu">Styles</div>
+                </div>
             </div>
             <div class="pip button">
                 <div class=icon></div>
