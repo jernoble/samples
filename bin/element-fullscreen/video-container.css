@@ -151,3 +151,5 @@
 
     .video-controls .fullscreen .icon { mask-image: url(EnterFullscreen.svg); }
     :host(:fullscreen) .video-controls .fullscreen .icon { mask-image: url(ExitFullscreen.svg); }
+
+    video::-webkit-media-text-track-container { transform: translateY(-2em); }
