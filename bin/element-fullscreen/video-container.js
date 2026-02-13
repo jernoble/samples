@@ -37,6 +37,8 @@ class VideoContainer extends HTMLElement {
 
         if (this.hasAttribute('src'))
             this.#video.src = this.getAttribute('src');
+        if (this.hasAttribute('loop'))
+            this.#video.loop = true;
         this.#video.load();
 
         let timeline = this.shadowRoot.querySelector('.timeline');
@@ -127,6 +129,8 @@ class VideoContainer extends HTMLElement {
                 this.#video.src = newValue;
             if (name.toLowerCase() === 'playsinline')
                 this.#video.playsInline = newValue;
+            if (name.toLowerCase() === 'loop')
+                this.#video.loop = newValue;
         }
     }
 
