@@ -1,0 +1,71 @@
+---
+title: Infinite Scrolling Video Embeds
+tags: Video Scrolling
+---
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #111;
+        color: white;
+        font-family: -apple-system, system-ui, sans-serif;
+    }
+    .video-item {
+        margin: 20px auto;
+        max-width: 640px;
+    }
+    .video-item .label {
+        padding: 8px 16px;
+        font-size: 14px;
+        color: #aaa;
+    }
+    .video-item iframe {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: none;
+        display: block;
+    }
+</style>
+<body>
+<div id="container"></div>
+<script>
+    let videoCount = 0;
+
+    function addVideo() {
+        const item = document.createElement('div');
+        item.className = 'video-item';
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = `Video ${++videoCount}`;
+
+        const iframe = document.createElement('iframe');
+        iframe.src = 'video-iframe-content.html';
+        iframe.allowFullscreen = true;
+        iframe.allow = 'fullscreen';
+
+        item.appendChild(label);
+        item.appendChild(iframe);
+        document.getElementById('container').appendChild(item);
+    }
+
+    // Seed with a few initial videos
+    for (let i = 0; i < 3; i++)
+        addVideo();
+
+    // Add more videos as the user scrolls near the bottom
+    const observer = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) {
+            addVideo();
+            // Move the sentinel to the new bottom
+            document.getElementById('container').appendChild(sentinel);
+        }
+    }, { rootMargin: '200px' });
+
+    const sentinel = document.createElement('div');
+    sentinel.id = 'sentinel';
+    document.getElementById('container').appendChild(sentinel);
+    observer.observe(sentinel);
+</script>
+</body>

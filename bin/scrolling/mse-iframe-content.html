@@ -1,0 +1,37 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../media-source/media-source-loader.js"></script>
+<style>
+    body, html { background-color: black; margin: 0; padding: 0; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: contain; }
+</style>
+<body>
+<video controls playsinline></video>
+<script>
+    function waitFor(object, event) {
+        return new Promise(resolve => {
+            object.addEventListener(event, resolve, { once: true });
+        });
+    }
+
+    async function go() {
+        let video = document.querySelector('video');
+        let mediaSource = new MediaSource();
+        video.srcObject = mediaSource;
+        await waitFor(mediaSource, 'sourceopen');
+
+        let loader = new MediaSourceLoader('../../common_assets/media/bipbop-10m-manifest.json', '../../common_assets/media/');
+        await loader.load();
+        let sourceBuffer = mediaSource.addSourceBuffer(loader.type);
+        sourceBuffer.appendBuffer(loader.initSegment);
+        await waitFor(sourceBuffer, 'update');
+
+        for (let i = 0; i < loader.mediaSegmentsLength; ++i) {
+            sourceBuffer.appendBuffer(loader.mediaSegment(i));
+            await waitFor(sourceBuffer, 'update');
+        }
+    }
+
+    go();
+</script>
+</body>
