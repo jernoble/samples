@@ -1,0 +1,48 @@
+---
+title: "Lossless MSE Audio"
+tags: Audio MSE
+---
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>synctest</title>
+	<script src="media-source-loader.js"></script>
+	<script>
+    function waitFor(object, event) {
+    	return new Promise(resolve => {
+    		object.addEventListener(event, resolve, { once: true });
+    	});
+    }
+
+    async function loadManifest(audio, url, base) {
+        let mediaSource = new MediaSource();
+        audio.srcObject = mediaSource;
+        await waitFor(mediaSource, 'sourceopen');
+
+        let loader = new MediaSourceLoader(url, base);
+        await loader.load();
+        let sourceBuffer = mediaSource.addSourceBuffer(loader.type);
+        sourceBuffer.appendBuffer(loader.initSegment);
+        await waitFor(sourceBuffer, 'update');
+
+        for (let i = 0; i < loader.mediaSegmentsLength; ++i) {
+            sourceBuffer.appendBuffer(loader.mediaSegment(i));
+            await waitFor(sourceBuffer, 'update');
+        }
+    };
+
+
+    window.addEventListener('load', async event => {
+        let alac = document.querySelector('#alac');
+        let flac = document.querySelector('#flac');
+
+        loadManifest(alac, '../../common_assets/media/alac-manifest.json', '../../common_assets/media/');
+        loadManifest(flac, '../../common_assets/media/flac-manifest.json', '../../common_assets/media/');
+    });
+	</script>
+</head>
+<body>
+    ALAC: <audio id=alac controls playsinline></audio><br/>
+    FLAC: <audio id=flac controls playsinline></audio><br/>
+</body>
+</html>

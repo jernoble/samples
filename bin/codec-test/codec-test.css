@@ -1,0 +1,22 @@
+body {
+	max-width: 50em;
+	margin: auto;
+}
+table {
+	border: 1px solid black;
+	border-collapse: collapse;
+	width: 100%;
+}
+td, th {
+	border: 1px solid black;
+	padding: 0.2em;
+}
+th {
+	background-color: lightgray;
+}
+td.supported {
+	background-color: lightgreen;
+}
+td.not-supported {
+	background-color: lightcoral;
+}

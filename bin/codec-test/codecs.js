@@ -1,0 +1,30 @@
+const audioCodecs = [
+    { name: "AAC main", container: "mp4", codec: "mp4a.40.1" },
+    { name: "AAC-LC", container: "mp4", codec: "mp4a.40.2" },
+    { name: "Dolby AC-3", container: "mp4", codec: "ac-3" },
+    { name: "Dolby E-AC-3", container: "mp4", codec: "ec-3" },
+    { name: "Dolby AC-4", container: "mp4", codec: "ac-4" },
+    { name: "AAC main", container: "mp4", codec: "mp4a.40.1" },
+    { name: "AAC-LC", container: "mp4", codec: "mp4a.40.2" },
+    { name: "HE-AAC", container: "mp4", codec: "mp4a.40.5" },
+    { name: "HE-AACv2", container: "mp4", codec: "mp4a.40.29" },
+    { name: "xHE-AAC", container: "mp4", codec: "mp4a.40.42" },
+    { name: "FLAC", container: "mp4", codec: "flac" },
+    { name: "ALAC", container: "mp4", codec: "alac" },
+];
+
+const videoCodecs = [
+    { name: "AVC/H264", container: "mp4", codec: "avc1.640028", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "Dolby Vision Profile 4", container: "mp4", codec: "dvh1.04.07", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "Dolby Vision Profile 5", container: "mp4", codec: "dvh1.05.07", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "Dolby Vision Profile 8", container: "mp4", codec: "dvh1.08.07", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "Dolby Vision Profile 9", container: "mp4", codec: "dva1.09.05", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "Dolby Vision Profile 10", container: "mp4", codec: "dav1.10.05", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "HEVC/H265 Main Profile", container: "mp4", codec: "hvc1.1.6.L93.B0", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "HEVC/H265 Main 10 Profile", container: "mp4", codec: "hvc1.2.4.L153.B0", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "AV1 (Main, Level 2.1)", container: "mp4", codec: "av01.0.01M.08", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "AV1 (Main, Level 5.0, 4K)", container: "mp4", codec: "av01.0.12M.08", width: 3140, height: 2160, bitrate: 1000, frameRate: 30 },
+    { name: "AV1 (Main, Level 5.0, 4K HDR)", container: "mp4", codec: "av01.0.13M.10", width: 3140, height: 2160, bitrate: 1000, frameRate: 30 },
+    { name: "VP8 video", container: "webm", codec: "vp8", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+    { name: "VP9 video", container: "webm", codec: "vp09.00.10.08", width: 640, height: 360, bitrate: 1000, frameRate: 30 },
+];

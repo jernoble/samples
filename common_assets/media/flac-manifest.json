@@ -1,0 +1,16 @@
+{
+   "init" : {
+      "offset" : 0,
+      "size" : 725
+   },
+   "media" : [
+      {
+         "duration" : 5,
+         "offset" : 725,
+         "size" : 63393,
+         "timestamp" : 0
+      }
+   ],
+   "type" : "video/mp4",
+   "url" : "flac.mp4"
+}

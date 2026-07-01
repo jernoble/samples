@@ -1,0 +1,16 @@
+{
+   "init" : {
+      "offset" : 0,
+      "size" : 711
+   },
+   "media" : [
+      {
+         "duration" : 5,
+         "offset" : 711,
+         "size" : 107079,
+         "timestamp" : 0
+      }
+   ],
+   "type" : "video/mp4",
+   "url" : "alac.mp4"
+}
